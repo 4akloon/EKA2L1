@@ -23,6 +23,7 @@ set(CORE_TEST_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/package/manager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/scripting.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/system/gamecard.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/system/tasks.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/services/applist/language.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/services/applist/registeration.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/services/applist/rescan.cpp
