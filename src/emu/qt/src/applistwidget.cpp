@@ -473,8 +473,17 @@ void applist_widget::reload_whole_list_now() {
                 scanning_done_evt_.set();
                 return;
             }
-            std::vector<eka2l1::apa_app_registry> &registries = lister_->get_registerations();
+            std::vector<eka2l1::apa_app_registry> &live_registries = lister_->get_registerations();
             exit_mutex_.unlock();
+
+            // Work on a copy: a rescan on another thread (an install finishing, say) may drop
+            // and reorder entries while the items are being made.
+            std::vector<eka2l1::apa_app_registry> registries;
+
+            {
+                const std::lock_guard<std::mutex> list_guard(lister_->list_access_mut_);
+                registries = live_registries;
+            }
 
             // An empty list is reported once the scan is done, on the UI thread.
             for (std::size_t i = 0; i < registries.size(); i++) {
