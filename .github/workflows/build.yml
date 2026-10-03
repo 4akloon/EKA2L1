@@ -234,6 +234,27 @@ jobs:
         ./scripts/generate_appimage.sh
       if: matrix.label == 'linux'
 
+    # symdev integration branch only, not an upstream change: the Ubuntu packages whose
+    # files linuxdeploy put into the AppImage, with their source packages, so that their
+    # corresponding source can be published with it. A bundled file that belongs to no
+    # package fails the job.
+    - name: List the packages the AppImage bundles
+      if: matrix.label == 'linux'
+      shell: bash
+      run: |
+        cd build/eka2l1.AppDir/usr
+        find lib plugins -type f -name '*.so*' -printf '%f\n' | sort -u > ../../bundled-files.txt
+        : > ../../bundled-owners.txt
+        while read -r name; do
+          owner=$(dpkg -S "*/$name" 2>/dev/null | awk -F': ' 'NR == 1 { print $1 }') || true
+          if [ -z "$owner" ]; then echo "::error::$name belongs to no package"; exit 1; fi
+          echo "$owner" >> ../../bundled-owners.txt
+        done < ../../bundled-files.txt
+        sort -u ../../bundled-owners.txt | xargs dpkg-query -W \
+          -f '${binary:Package}\t${Version}\t${source:Package}\t${source:Version}\n' \
+          | sort > ../../eka2l1-qt-x64.packages.tsv
+        wc -l ../../eka2l1-qt-x64.packages.tsv
+
     - name: Compute git short sha
       id: git_short_sha
       run: echo "value=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
@@ -274,7 +295,9 @@ jobs:
     - uses: actions/upload-artifact@v7
       with:
         name: eka2l1-${{ steps.git_short_sha.outputs.value }}-${{ matrix.label }}
-        path: build/eka2l1-qt-x64.AppImage
+        path: |
+          build/eka2l1-qt-x64.AppImage
+          build/eka2l1-qt-x64.packages.tsv
       if: matrix.label == 'linux'
 
   # Device only, and never signed. Signing on CI mints a development certificate
